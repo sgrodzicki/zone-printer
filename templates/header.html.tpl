@@ -22,7 +22,7 @@
         }
 
         main {
-            max-width: 550px;
+            max-width: 1000px;
             margin: 120px auto;
         }
 
@@ -33,8 +33,9 @@
         }
 
         img.flag {
-            width: 100%;
-            height: auto;
+            width: 640px;
+            height: 400px;
+            margin-left: 0px;
             margin-top: 50px;
             box-shadow: rgb(149 157 165 / 10%) 0px 8px 26px;
         }

@@ -27,8 +27,13 @@ import (
 )
 
 var (
-	computeZone string
-	templates   *template.Template
+	computeZone      string
+	clusterName      string
+	clusterUid       string
+	externalIP       string
+	instanceId       string
+	instanceHostname string
+	templates        *template.Template
 )
 
 func main() {
@@ -41,6 +46,47 @@ func main() {
 		}
 		computeZone = zone
 		log.Printf("info: determined zone: %q", zone)
+
+		log.Println(" ----- Available instance tags ----- ")
+		tags, _ := metadata.InstanceTags()
+		for _, v1 := range tags {
+			log.Printf("info: instance tags: %+v", v1)
+		}
+
+		log.Println(" ----- Available instance attributes ----- ")
+		attrs, _ := metadata.InstanceAttributes()
+		for _, v2 := range attrs {
+			log.Printf("info: instance attributes: %+v", v2)
+		}
+
+		id, _ := metadata.InstanceID()
+		log.Printf("info: instance id: %q", id)
+		instanceId = id
+
+		hostname, _ := metadata.Hostname()
+		log.Printf("info: hostname : %q", hostname)
+		instanceHostname = hostname
+
+		// add cluster name
+		cluster, err := metadata.InstanceAttributeValue("cluster-name")
+		if err != nil {
+			log.Fatalf("failed to get cluster name: %+v", err)
+		}
+		clusterName = cluster
+
+		// add cluster id
+		cuid, err := metadata.InstanceAttributeValue("cluster-uid")
+		if err != nil {
+			log.Fatalf("failed to get cluster uid: %+v", err)
+		}
+		clusterUid = cuid
+
+		// add ip
+		ip, err := metadata.ExternalIP()
+		if err != nil {
+			log.Printf("failed to get external IP: %+v", err)
+		}
+		externalIP = ip
 	}
 	if v := os.Getenv("FAKE_ZONE"); v != "" {
 		// TODO(ahmetb) remove before submitting
@@ -97,9 +143,14 @@ func handle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := templates.ExecuteTemplate(w, "successPage", map[string]interface{}{
-		"region_code": computeZone,
-		"region_geo":  cityName,
-		"flag_url":    flagURL,
+		"region_code":       computeZone,
+		"region_geo":        cityName,
+		"flag_url":          flagURL,
+		"cluster_name":      clusterName,
+		"cluster_uid":       clusterUid,
+		"external_ip":       externalIP,
+		"instance_id":       instanceId,
+		"instance_hostname": instanceHostname,
 	}); err != nil {
 		log.Fatalf("failed to render template: %v", err)
 	}
